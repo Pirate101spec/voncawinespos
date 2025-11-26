@@ -1,43 +1,33 @@
 <?php
+// assets/api/edit_product.php
+session_start();
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS'); // We'll use POST with a _method flag
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-
 require_once 'db.php';
 
-$response = ['success' => false, 'message' => ''];
+$response = ["success" => false, "message" => ""];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
+try {
+    $data = json_decode(file_get_contents("php://input"), true);
 
-    $id = $data['id'] ?? null;
-    $barcode = $data['barcode'] ?? null;
-    $name = $data['name'] ?? null;
-    $retail_price = $data['retail_price'] ?? null;
-    $wholesale_price = $data['wholesale_price'] ?? null;
-    $stock = $data['stock'] ?? 0;
-
-    if (!$id || !$barcode || !$name || !$retail_price) {
-        $response['message'] = 'Required fields missing.';
-        echo json_encode($response);
-        exit;
+    if (!$data || !isset($data['id'], $data['barcode'], $data['name'], $data['retail_price'], $data['wholesale_price'], $data['stock'])) {
+        throw new Exception("Missing required fields.");
     }
 
-    try {
-        $stmt = $pdo->prepare("UPDATE products SET barcode = ?, name = ?, retail_price = ?, wholesale_price = ?, stock = ? WHERE id = ?");
-        $stmt->execute([$barcode, $name, $retail_price, $wholesale_price, $stock, $id]);
+    $stmt = $pdo->prepare("UPDATE products 
+                           SET barcode = ?, name = ?, retail_price = ?, wholesale_price = ?, stock = ? 
+                           WHERE id = ?");
+    $stmt->execute([
+        $data['barcode'],
+        $data['name'],
+        $data['retail_price'],
+        $data['wholesale_price'],
+        $data['stock'],
+        $data['id']
+    ]);
 
-        $response['success'] = true;
-        $response['message'] = 'Product updated successfully.';
-    } catch (PDOException $e) {
-        if ($e->getCode() === '23000') {
-            $response['message'] = 'A product with this barcode already exists.';
-        } else {
-            $response['message'] = 'Database error: ' . $e->getMessage();
-        }
-    }
+    $response = ["success" => true, "message" => "Product updated successfully."];
+} catch (Exception $e) {
+    $response["message"] = "Error: " . $e->getMessage();
 }
 
 echo json_encode($response);
-?>

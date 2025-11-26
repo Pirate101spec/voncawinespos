@@ -7,9 +7,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/tailwind.min.css">
-<script src="assets/js/chart.min.js"></script>
 
 <style>
+    /* --- Wholesale price animation --- */
+.price-change {
+  background-color: #d1fae5; /* light green */
+  transition: background-color 0.5s ease-in-out;
+}
 /* Font and body styles */
 @font-face {
   font-family: 'Inter';
@@ -50,10 +54,6 @@ aside {
     margin-left: 1rem; /* The content sits flush with the collapsed bar */
 }
 
-/*
- * HOVER EFFECT on Collapsed State
- * These rules apply when the mouse hovers over a collapsed sidebar
- */
 .sidebar-collapsed aside:hover {
     width: 12.5rem;
 }
@@ -62,12 +62,6 @@ aside {
     display: block;
 }
 
-
-/*
- * PINNED STATE
- * These rules are for when the button has been clicked,
- * making the sidebar permanently open.
- */
 .sidebar-pinned aside {
     width: 12.5rem;
 }
@@ -75,24 +69,80 @@ aside {
 .sidebar-pinned aside div.text-2xl {
     display: block;
 }
+/* POS Search Loader Spinner */
+.loader {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #047857; /* Tailwind green-700 */
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 0.8s linear infinite;
+  margin: 8px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #1364f1;
+  border-radius: 9999px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
+.dashboard-scroll {
+    max-height: 100px;     /* adjust to your preferred height */
+    overflow-y: auto;
+    padding-right: 2px;    /* keep text from touching scrollbar */
+}
+
+/* optional — nicer thin scrollbar */
+.dashboard-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+.dashboard-scroll::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+.dashboard-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+.loader {
+    border: 4px solid #eee;
+    border-left-color: #4caf50;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
 
 </style>
 
 </head>
 <body class="bg-gray-100">
-  <div class="flex">
+  <div class=" sidebar flex" id="sidebar">
     <!-- Sidebar -->
     <aside class=" bg-green-700 text-white min-h-screen p-4 transition-all duration-300" >
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center space-x-2 logo-area">
           <img src="logo.png" alt="Logo" class="w-20 h-15 rounded-full" />
-          <span class="text-xl ">Vonca</span>
+          <span class="text-sm ">Vonca</span>
         </div>
-        <div id="usernameDisplay" class="text-sm text-gray-300 mt-2"></div>
         <button onclick="toggleSidebar()" class="text-white focus:outline-none">☰</button>
       </div>
       <nav class="space-y-2">
-        <a href="#" class=" py-2 px-3 rounded hover:bg-green-600 flex items-center active-link" data-tab="dashboardTab">
+        <a href="#" class="admin-only py-2 px-3 rounded hover:bg-green-600 flex items-center " data-tab="dashboardTab">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7"/></svg>
           <span>Dashboard</span>
         </a>
@@ -100,31 +150,31 @@ aside {
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
           <span>POS</span>
         </a>
-        <a href="#" class=" py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="invoiceTab">
+        <a href="#" class="admin-only py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="invoiceTab">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7h18M3 12h18M3 17h18"/></svg>
           <span>Invoice</span>
         </a>
-        <a href="#" class=" py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="reportsTab">
+        <a href="#" class="admin-only py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="reportsTab">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
           <span>Reports</span>
         </a>
-        <a href="#" class=" py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="productsTab">
+        <a href="#" class="admin-only py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="productsTab">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V7a2 2 0 00-2-2h-6m-4 0H6a2 2 0 00-2 2v6"/></svg>
           <span>Products</span>
         </a>
-        <a href="#" class=" py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="customersTab">
+        <a href="#" class="admin-only py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="customersTab">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A3.001 3.001 0 017 16h10a3.001 3.001 0 011.879.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
           <span>Customers</span>
         </a>
-        <a href="#" class=" py-2 px-3 rounded hover:bg-green-600 flex items-center admin-only" data-tab="usersTab">
+        <a href="#" class="admin-only py-2 px-3 rounded hover:bg-green-600 flex items-center admin-only" data-tab="usersTab">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A3.001 3.001 0 017 16h10a3.001 3.001 0 011.879.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>Users</span>
         </a>
-        <a href="#" class=" py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="refundsTab">
+        <a href="#" class="admin-only py-2 px-3 rounded hover:bg-green-600 flex items-center" data-tab="refundsTab">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2-1.343-2-3-2z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 11c0 2.761-3.582 5-8 5s-8-2.239-8-5"/></svg>
             <span>Refunds</span>
         </a>
-        <a href="#" class=" py-2 px-3 rounded hover:bg-green-600 flex items-center admin-only" data-tab="settingsTab">
+        <a href="#" class="admin-only py-2 px-3 rounded hover:bg-green-600 flex items-center admin-only" data-tab="settingsTab">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.595.364 1.25.56 1.954.56h.001z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span>Settings</span>
         </a>
@@ -134,129 +184,175 @@ aside {
           <span>Logout</span>
         </a>
       </nav>
-    </aside>
+      <div class="mt-4 text-sm text-gray-600">
+        Logged in as: <span id="usernameDisplay"></span>
+    </div>
+</aside>
 
     <!-- Main Content -->
     <main class=" p-6 main-content">
 
-      <div id="dashboardTab" class="tab-content">
-      <div class=" grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-green-500 text-white p-4 rounded-lg shadow">
-          <p>Total Invoices</p>
-          <h2 class="text-2xl font-bold">3,766</h2>
-          <p class="text-sm">Today: 92</p>
-        </div>
-        <div class="bg-red-500 text-white p-4 rounded-lg shadow">
-          <p>Total Customers</p>
-          <h2 class="text-2xl font-bold">652</h2>
-          <p class="text-sm">Today: 21</p>
-        </div>
-        <div class="bg-blue-500 text-white p-4 rounded-lg shadow">
-          <p>Total Suppliers</p>
-          <h2 class="text-2xl font-bold">38</h2>
-          <p class="text-sm">Today: 2</p>
-        </div>
-        <div class="bg-yellow-500 text-white p-4 rounded-lg shadow">
-          <p>Total Products</p>
-          <h2 class="text-2xl font-bold">21,156</h2>
-          <p class="text-sm">Today: 310</p>
-        </div>
-      </div>
-        
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-4">Sales Performance (Last 7 Days)</h2>
-            <canvas id="salesChart" class="h-64"></canvas>
-        </div>
-        
+      <div id="dashboardTab" class="tab-content hidden">
+
+  <!-- TOP STAT CARDS -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+    <div class="bg-green-500 text-white p-4 rounded-lg shadow">
+      <p class="text-sm opacity-90">Total Invoices</p>
+      <h2 id="cardTotalInvoices" class="text-2xl font-bold mt-1">—</h2>
+      <p class="text-xs opacity-80 mt-1">Updated live</p>
     </div>
 
-               <div id="posTab" class="tab-content hidden">
-                <div class="flex justify-between items-center mb-4 text-gray-800">
-                    <h2 class="text-2xl font-semibold">Point of Sale</h2>
-                    <div id="dateTimeDisplay" class="text-sm text-gray-500 font-medium"></div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow p-6 w-full flex flex-col h-[calc(100vh-160px)]">
-                    <h2 class="text-xl font-semibold mb-4">POS Terminal</h2>
-                    
-                    <div class="relative mb-3">
-                        <input type="text" id="searchInput" placeholder="Search for products or scan barcode..." class="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-600" autocomplete="off" />
-                        <div id="searchResults" class="absolute z-20 w-full bg-white border border-gray-200 rounded-b-md shadow-lg hidden max-h-48 overflow-y-auto">
-                            </div>
-                    </div>
-                    
-                    <div class="overflow-x-auto flex-grow min-h-[250px] mb-4">
-                        <div id="noItemsMessage" class="h-full flex items-center justify-center text-gray-400 text-lg italic">
-                            No items in cart
-                        </div>
-                        <table class="w-full text-sm text-left hidden">
-                            <thead class="bg-green-100 text-gray-700">
-                                <tr>
-                                    <th class="px-3 py-2">Item</th>
-                                    <th class="px-3 py-2">Qty</th>
-                                    <th class="px-3 py-2">Price</th>
-                                    <th class="px-3 py-2">Total</th>
-                                    <th class="px-3 py-2">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cartTableBody" class="divide-y divide-gray-200">
-                                </tbody>
-                        </table>
-                    </div>
+    <div class="bg-blue-500 text-white p-4 rounded-lg shadow">
+      <p class="text-sm opacity-90">Total Customers</p>
+      <h2 id="cardTotalCustomers" class="text-2xl font-bold mt-1">—</h2>
+      <p class="text-xs opacity-80 mt-1">Updated live</p>
+    </div>
 
-                    <div class="mt-4 border-t pt-4">
-                        <div id="taxLine" class=" justify-between items-center text-sm mb-1 hidden">
-                            <span>Tax:</span>
-                            <span id="taxAmount">Ksh 0.00</span>
-                        </div>
-                        <div id="subtotalLine" class=" justify-between items-center text-sm mb-1 hidden">
-                            <span>Subtotal:</span>
-                            <span id="subTotalAmount">Ksh 0.00</span>
-                        </div>
-                        <div class="flex justify-between items-center font-bold text-lg">
-                            <span>Total:</span>
-                            <span id="grandTotal">Ksh 0.00</span>
-                        </div>
-                    </div>
+    <div class="bg-yellow-500 text-white p-4 rounded-lg shadow">
+      <p class="text-sm opacity-90">Total Products</p>
+      <h2 id="cardTotalProducts" class="text-2xl font-bold mt-1">—</h2>
+      <p class="text-xs opacity-80 mt-1">Updated live</p>
+    </div>
 
-                    <div class="mt-4 flex-wrap flex-col sm:flex-row gap-2">
-                        <button class="bg-green-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-700 hover:shadow-lg transition-all duration-300 active:scale-95" id="payCashBtn">Pay by Cash</button>
-                        <button class="bg-green-500 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-600 hover:shadow-lg transition-all duration-300 active:scale-95" id="payMpesaBtn">Pay by M-Pesa</button>
-                    </div>
-                    <div class="mt-2  flex-wrap flex-col sm:flex-row gap-2">
-                        <button class="bg-blue-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-300 active:scale-95" id="discountBtn">Wholesale Discount</button>
-                        <button class="bg-purple-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-purple-700 hover:shadow-lg transition-all duration-300 active:scale-95" id="adminDiscountBtn">Admin Discount</button>
-                    </div>
-                    <div class="mt-2 flex-wrap gap-2">
-                        <button class="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg shadow-md hover:bg-gray-300 hover:shadow-lg transition-all duration-300 active:scale-95" id="addCustomerBtn">Add Customer</button>
-                        <button class="bg-yellow-500 text-white py-2 px-4 rounded-lg shadow-md hover:bg-yellow-600 hover:shadow-lg transition-all duration-300 active:scale-95" id="printReceiptBtn">Print Receipt</button>
-                    </div>
-                </div>
+    <div class="bg-red-500 text-white p-4 rounded-lg shadow">
+      <p class="text-sm opacity-90">Revenue Today</p>
+      <h2 id="cardRevenueToday" class="text-2xl font-bold mt-1">Ksh 0.00</h2>
+      <p class="text-xs opacity-80 mt-1">Daily total sales</p>
+    </div>
+
+  </div>
+
+  <!-- CHARTS ROW -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    <div class="bg-white p-4 rounded-lg shadow">
+      <h3 class="font-semibold mb-2">Sales - Monthly</h3>
+      <canvas id="chartSalesMonthly" class="h-48"></canvas>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow">
+      <h3 class="font-semibold mb-2">Top Sellers</h3>
+      <canvas id="chartTopSellers" class="h-48"></canvas>
+    </div>
+
+  </div>
+
+  <!-- LOW STOCK + RECENT TRANSACTIONS -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+
+    <div class="bg-white p-4 rounded-lg shadow">
+      <h3 class="font-semibold mb-2">Low Stock Alerts</h3>
+      <div id="lowStockList" class="text-sm space-y-1 dashboard-scroll max-h-64 overflow-y-auto"></div>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow">
+      <h3 class="font-semibold mb-2">Recent Transactions</h3>
+      <div id="recentTransactions" class="text-sm space-y-1 dashboard-scroll max-h-64 overflow-y-auto"></div>
+    </div>
+
+  </div>
+</div> 
+   
+    <div id="posTab" class="tab-content bg-white border border-gray-400 shadow-xl max-w-7xl mx-auto rounded-lg p-6
+            flex flex-col h-[calc(100vh-140px)] overflow-hidden">
+
+        <div id="header" class="flex items-center justify-between mb-6">
+            <div id="dateTimeDisplay" class="text-2xl font-bold text-gray-800"></div>
+           <div class="relative flex items-center border border-gray-400 rounded-full py-1 px-4 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="text" id="searchInput" placeholder="Search..." class="outline-none text-sm w-48 text-gray-600 placeholder-gray-400">
+                <div class="ml-2 text-gray-500 text-lg">🔍</div>
+                <div id="searchResults" class="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto z-10"></div>
             </div>
+            
+        </div>
+        
+        <hr class="border-gray-300">
+
+        <div id="main-content" class="flex gap-8 mt-6 flex-1 overflow-hidden">
+            
+           <div id="table-section" class="flex flex-col border border-gray-400 rounded-lg p-3 h-full max-h-[calc(100vh-320px)] custom-scroll">
+
+                <div id="table-header" class="grid grid-cols-7 text-center font-semibold text-sm text-gray-700 border-b border-gray-300 pb-2 mb-2">
+                    <div class="p-2">Product Name</div>
+                    <div class="p-2">Avail QTY</div>
+                    <div class="p-2">QTY</div>
+                    <div class="p-2">Price</div>
+                    <div class="p-2">Total</div>
+                    <div class="p-2">Promo Products</div>
+                    <div class="p-2">ACTION</div>
+                </div>
+
+                <div id="cartTableBody" class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scroll">
+
+                    <div class="grid grid-cols-7 text-center text-sm text-gray-500 border-b border-gray-200 py-4"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                    <div class="grid grid-cols-7 text-center text-sm text-gray-500 border-b border-gray-200 py-4"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                    <div class="grid grid-cols-7 text-center text-sm text-gray-500 border-b border-gray-200 py-4"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                    <div class="grid grid-cols-7 text-center text-sm text-gray-500 border-b border-gray-200 py-4"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                    <div class="grid grid-cols-7 text-center text-sm text-gray-500 border-b border-gray-200 py-4"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                    <div class="grid grid-cols-7 text-center text-sm text-gray-500 py-4"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                </div>
+
+            </div>
+
+            <div id="side-panel" class="w-64 flex flex-col gap-4">
+                <button class="bg-gray-200 border border-gray-400 rounded-lg py-3 px-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-300 transition-colors" id="printReceiptBtn">Print</button>
+                <button class="bg-gray-200 border border-gray-400 rounded-lg py-2 px-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-300 transition-colors" id="discountBtn">Wholesale Discount</button>
+                <button class="bg-gray-200 border border-gray-400 rounded-lg py-3 px-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-300 transition-colors" id="payMpesaBtn">Pay by MPESA</button>
+                <button class="bg-gray-200 border border-gray-400 rounded-lg py-3 px-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-300 transition-colors"  id="payCashBtn">Pay by Cash</button>
+                <button class="bg-gray-200 border border-gray-400 rounded-lg py-3 px-3 text-center text-sm font-medium text-gray-700 hover:bg-gray-300 transition-colors"id="clearCartBtn">Clear cart</button>
+            </div>
+
+        </div>
+
+        <hr class="border-gray-300 mt-6">
+
+        <div id="footer" class="sticky bottom-0 bg-white border-t border-gray-300 py-2 mt-4 flex justify-between items-end text-sm text-gray-700 z-20">
+
+            <div id="summary" class="flex gap-8">
+                <div>TOTAL QTY: <span class="font-bold" id="totalQty">0</span></div>
+                <div>SUB-TOTAL: <span class="font-bold" id="subTotalAmount">0.00</span></div>
+                <div>VAT: <span class="font-bold" id="taxAmount">0.00</span></div>
+            </div>
+            <div id="grand-total-section" class="flex flex-col items-end">
+                <div class="text-sm">GRAND TOTAL
+                <span class="text-4xl font-extrabold text-gray-900" id="grandTotal">Ksh 0.00</span></div>
+            </div>
+        </div>
+
+    </div>
+
 
             <div id="productsTab" class="tab-content hidden">
-                <h2 class="text-xl font-semibold mb-4 text-gray-800">Product Management</h2>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <button id="addProductBtn" class="bg-green-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-800 mb-4">
-                        Add New Product</button>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left">
-                                <thead class="bg-gray-200 text-black-700">
-                                    <tr>
-                                        <th class="px-3 py-2">Barcode</th>
-                                        <th class="px-3 py-2">Name</th>
-                                        <th class="px-3 py-2">Retail Price</th>
-                                        <th class="px-3 py-2">wholesale price</th>
-                                        <th class="px-3 py-2">stock</th>
-                                        <th class="px-3 py-2">actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id=" productsTablebody" class=" divide-y divide-gray-200">
-                                </tbody>
-                            </table>
-                        </div>
-                </div>
-            </div>
+    <h2 class="text-xl font-semibold mb-4 text-gray-800">Product Management</h2>
+    <div class="bg-white rounded-lg shadow p-4">
+        
+        <button id="addProductBtn" 
+            class="bg-green-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-800 mb-4">
+            Add New Product
+        </button>
+
+        <!-- FIXED: scrollable product list -->
+        <div class=" max-h-[65vh] overflow-y-auto border rounded">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-200 text-black-700 sticky top-0 z-10">
+                    <tr>
+                        <th class="px-3 py-2">Barcode</th>
+                        <th class="px-3 py-2">Name</th>
+                        <th class="px-3 py-2">Retail Price</th>
+                        <th class="px-3 py-2">Wholesale Price</th>
+                        <th class="px-3 py-2">Stock</th>
+                        <th class="px-3 py-2">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTablebody" class="divide-y divide-gray-200">
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
 
              <div id="reportsTab" class="tab-content hidden">
                 <h2 class="text-xl font-semibold mb-4 text-gray-800">sales reports</h2>
@@ -311,13 +407,64 @@ aside {
                     </div>
                 </div>
             </div>
+<!-- INVOICE TAB -->
+<div id="invoiceTab" class="tab-content hidden p-4 max-w-7xl mx-auto">
 
-             <div id="invoiceTab" class="tab-content hidden">
-                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Invoices</h2>
-                <div class="p-4 bg-white rounded-lg shadow">
-                    <p class="text-gray-600">Invoice content here...</p>
-                </div>
-            </div>
+  <h2 class="text-2xl font-bold mb-4">Invoices</h2>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap gap-4 mb-4 items-end">
+    <input id="invoiceSearch" type="text" placeholder="Search by customer or invoice #" 
+      class="border rounded px-3 py-2 w-64">
+
+    <input id="invoiceStartDate" type="date" class="border rounded px-3 py-2">
+
+    <input id="invoiceEndDate" type="date" class="border rounded px-3 py-2">
+
+    <button id="invoiceFilterBtn" 
+      class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+      Filter
+    </button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="bg-white rounded shadow border overflow-hidden">
+
+    <!-- FIXED HEADER -->
+    <div class="overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-200 text-gray-700 sticky top-0 z-10">
+          <tr>
+            <th class="px-4 py-2 border">Invoice #</th>
+            <th class="px-4 py-2 border">Customer</th>
+            <th class="px-4 py-2 border">Subtotal</th>
+            <th class="px-4 py-2 border">Tax</th>
+            <th class="px-4 py-2 border">Total</th>
+            <th class="px-4 py-2 border">Payment Method</th>
+            <th class="px-4 py-2 border">Date</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+
+    <!-- SCROLLABLE BODY -->
+    <div class="max-h-[420px] overflow-y-auto custom-scroll">
+      <table class="w-full text-sm">
+        <tbody id="invoiceTableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Pagination -->
+  <div class="flex justify-between items-center mt-4">
+    <button id="prevPage" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Prev</button>
+    <span id="pageInfo" class="font-medium"></span>
+    <button id="nextPage" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Next</button>
+  </div>
+
+</div>
+
 
             <div id="customersTab" class="tab-content hidden">
                 <h2 class="text-2xl font-semibold mb-4 text-gray-800">Customers</h2>
@@ -375,6 +522,45 @@ aside {
         <audio id="beepSound" src="assets/sounds/beep.mp3" preload="auto"></audio>
 
     </div>
+    <!-- Receipt Template -->
+<div id="receiptTemplate" class="hidden print:block w-[80mm] text-xs font-mono">
+  <div class="text-center border-b pb-2 mb-2">
+    <h2 class="font-bold text-lg">Vonca Wines</h2>
+    <p>123 Main Street, Nairobi</p>
+    <p>Tel: 0700 000 000</p>
+  </div>
+
+  <div class="mb-2">
+    <p>Receipt #: <span id="receiptNo"></span></p>
+    <p>Date: <span id="receiptDate"></span></p>
+    <p>Cashier: <span id="receiptCashier"></span></p>
+    <p>Payment: <span id="receiptPayment"></span></p>
+  </div>
+
+  <table class="w-full text-left border-b mb-2">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th class="text-right">Qty</th>
+        <th class="text-right">Price</th>
+        <th class="text-right">Total</th>
+      </tr>
+    </thead>
+    <tbody id="receiptItems"></tbody>
+  </table>
+
+  <div class="text-right">
+    <p>Subtotal: <span id="receiptSubtotal"></span></p>
+    <p>Tax: <span id="receiptTax"></span></p>
+    <p class="font-bold">Grand Total: <span id="receiptTotal"></span></p>
+  </div>
+
+  <div class="text-center border-t pt-2 mt-2">
+    <p>Thank you for shopping!</p>
+    <p>Powered by Vonca POS</p>
+  </div>
+</div>
+
     <div id="cashPaymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex justify-center items-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-96 text-sm">
                     <h3 class="text-lg font-bold mb-4">Cash Payment</h3>
@@ -391,7 +577,7 @@ aside {
                         <p class="text-xl font-bold" id="changeDisplay">Ksh 0.00</p>
                     </div>
                     <div class="flex justify-end space-x-2">
-                        <button class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400" onclick="closeModal('cashPaymentModal')">Cancel</button>
+                        <button class="modal-cancel bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400">Cancel</button>
                         <button class="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700" id="completeCashBtn">Complete Transaction</button>
                     </div>
                 </div>
@@ -402,7 +588,7 @@ aside {
                     <h3 class="text-lg font-bold mb-4">M-Pesa Payment</h3>
                     <p class="text-gray-700 mb-6">Checking for an incoming payment...</p>
                     <div class="flex justify-center space-x-2">
-                        <button class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400" onclick="closeModal('mpesaInitialModal')">Cancel</button>
+                        <button class="modal-cancel bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400">Cancel</button>
                         <button class="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700" id="initiateStkPushBtn">Initiate STK Push</button>
                     </div>
                 </div>
@@ -420,11 +606,23 @@ aside {
                         <input type="tel" id="mpesaPhone" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500" placeholder="e.g., 2547XXXXXXXX" />
                     </div>
                     <div class="flex justify-end space-x-2">
-                        <button class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400" onclick="closeModal('mpesaPaymentModal')">Cancel</button>
+                        <button class="modal-cancel bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400" >Cancel</button>
                         <button class="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700" id="completeMpesaBtn">Confirm Payment</button>
                     </div>
                 </div>
             </div>
+
+            <!-- MPESA WAITING MODAL -->
+<div id="mpesaWaitModal"
+     class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50">
+
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center w-64">
+        <div class="loader mx-auto mb-3"></div>
+        <p class="font-semibold text-gray-700">Waiting for M-Pesa confirmation…</p>
+        <p class="text-sm text-gray-500 mt-1">Do NOT close this window.</p>
+    </div>
+</div>
+
 
             <div id="addCustomerModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex justify-center items-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-96 text-sm">
@@ -438,11 +636,29 @@ aside {
                         <input type="tel" id="customerPhone" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500" placeholder="e.g., 2547XXXXXXXX" />
                     </div>
                     <div class="flex justify-end space-x-2">
-                        <button class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400" onclick="closeModal('addCustomerModal')">Cancel</button>
+                        <button class="modal-cancel bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400" >Cancel</button>
                         <button class="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700" id="saveCustomerBtn">Save Customer</button>
                     </div>
                 </div>
             </div>
+
+            <!-- Add Stock Modal -->
+<div id="addStockModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white p-5 rounded-lg shadow-lg w-80">
+      <h2 class="text-lg font-semibold mb-3">Add Stock</h2>
+      
+      <input type="hidden" id="addStockProductId">
+
+      <label class="block text-sm font-medium mb-1">Quantity to Add</label>
+      <input type="number" id="addStockQuantity" class="w-full border px-3 py-2 rounded mb-4" min="1">
+
+      <div class="flex justify-end space-x-2">
+        <button class="modal-cancel bg-gray-300 px-3 py-1 rounded">Cancel</button>
+        <button id="saveStockBtn" class="bg-green-600 text-white px-3 py-1 rounded">Add</button>
+      </div>
+  </div>
+</div>
+
 
             <div id="productModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex justify-center items-center z-50">
                 <div class="bg-white rounded-lg shadow-xl p-6 w-96 text-sm">
@@ -470,7 +686,7 @@ aside {
                             <input type="number" id="productStock" class="mt-1 block w-full border rounded-md shadow-sm py-2 px-3 text-sm" required />
                         </div>
                         <div class="flex justify-end space-x-2">
-                            <button type="button" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400" onclick="closeModal('productModal')">Cancel</button>
+                            <button type="button" class=" modal-cancel bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400">Cancel</button>
                             <button type="submit" class="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700">Save</button>
                         </div>
                     </form>
@@ -497,22 +713,51 @@ aside {
                             </select>
                         </div>
                         <div class="flex justify-end space-x-2">
-                            <button type="button" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400" onclick="closeModal('addUserModal')">Cancel</button>
+                            <button type="button" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400 modal-cancel ">Cancel</button>
                             <button type="submit" class="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700">Save</button>
                         </div>
                     </form>
+            
                 </div>
             </div>
+        <!-- Low Stock Modal -->
+<div id="lowStockModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-96 max-h-[70vh] rounded-lg shadow-lg p-4 overflow-y-auto">
+      <h2 class="text-lg font-semibold mb-3">Low Stock Alerts</h2>
+      <div id="lowStockModalBody" class="space-y-2 text-sm"></div>
+
+      <button class="mt-4 bg-red-500 text-white px-4 py-2 rounded modal-close">
+        Close
+      </button>
+  </div>
+</div>
+
+<!-- Recent Transactions Modal -->
+<div id="recentTransactionsModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50">
+  <div class="bg-white w-96 max-h-[70vh] rounded-lg shadow-lg p-4 overflow-y-auto">
+      <h2 class="text-lg font-semibold mb-3">Recent Transactions</h2>
+      <div id="recentTransactionsModalBody" class="space-y-2 text-sm"></div>
+
+      <button class="mt-4 bg-red-500 text-white px-4 py-2 rounded modal-close">
+        Close
+      </button>
+  </div>
+</div>
+
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="assets/js/api.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/pos.js"></script>
     <script src="assets/js/products.js"></script>
-    <script src="assets/js/reports.js"></script>
+    <script src="assets/js/invoice.js"></script>
     <script src="assets/js/users.js"></script>
+    <script src="assets/js/reports.js"></script>    
     <script src="assets/js/settings.js"></script>
     <script src="assets/js/refunds.js"></script>
+    <script src="assets/js/dashboard.js"></script>
     <script src="assets/js/app.js"></script>
+    
 </body>
 </html>

@@ -1,33 +1,37 @@
 <?php
+session_start();
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-
 require_once 'db.php';
 
-$response = ['success' => false, 'message' => ''];
+$response = ["success" => false, "message" => ""];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $id = $data['id'] ?? null;
-
-    if (!$id) {
-        $response['message'] = 'Product ID is required.';
-        echo json_encode($response);
+try {
+    // ✅ Only admins allowed
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+        echo json_encode(["success" => false, "message" => "Unauthorized"]);
         exit;
     }
 
-    try {
-        $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
-        $stmt->execute([$id]);
+    $rawData = file_get_contents("php://input");
+    $data = json_decode($rawData, true);
 
-        $response['success'] = true;
-        $response['message'] = 'Product deleted successfully.';
-    } catch (Exception $e) {
-        $response['message'] = 'Error deleting product: ' . $e->getMessage();
+    if (!isset($data['id'])) {
+        throw new Exception("Product ID is required.");
     }
+
+    $productId = intval($data['id']);
+
+    $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
+    $stmt->execute([$productId]);
+
+    if ($stmt->rowCount() > 0) {
+        $response = ["success" => true, "message" => "Product deleted successfully"];
+    } else {
+        $response = ["success" => false, "message" => "Product not found"];
+    }
+
+} catch (Exception $e) {
+    $response = ["success" => false, "message" => $e->getMessage()];
 }
 
 echo json_encode($response);
-?>

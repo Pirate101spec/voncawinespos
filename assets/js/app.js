@@ -1,57 +1,61 @@
 document.addEventListener('DOMContentLoaded', () => {
-
     const body = document.body;
     const toggleButton = document.querySelector('aside button');
-    const logoutBtn = document.querySelector('[data-tab="logoutTab"]');
-    const usernameDisplay = document.getElementById('usernameDisplay'); // You need to add this element to your HTML
     const navLinks = document.querySelectorAll('aside nav a[data-tab]');
     const tabContents = document.querySelectorAll('.tab-content');
 
-
-    
-    // Initial state: start with the sidebar collapsed
+    // --- Sidebar state ---
     body.classList.add('sidebar-collapsed');
 
-    // Toggle function for the button
-    toggleButton.addEventListener('click', () => {
-        if (body.classList.contains('sidebar-collapsed')) {
-            body.classList.remove('sidebar-collapsed');
-            body.classList.add('sidebar-pinned');
-        } else {
-            body.classList.remove('sidebar-pinned');
-            body.classList.add('sidebar-collapsed');
-        }
-    });
-
-    // Your existing tab switching logic remains the same.
-   
-    navLinks.forEach(link => {
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
-
-            const tabId = link.getAttribute('data-tab');
-
-            tabContents.forEach(content => {
-                content.classList.add('hidden');
-            });
-
-            const selectedTab = document.getElementById(tabId);
-            if (selectedTab) {
-                selectedTab.classList.remove('hidden');
-            }
-
-            navLinks.forEach(navLink => navLink.classList.remove('active-link'));
-            link.classList.add('active-link');
-
-            if (!body.classList.contains('sidebar-pinned')) {
-                body.classList.add('sidebar-collapsed');
-            }
+    if (toggleButton) {
+        toggleButton.addEventListener('click', () => {
+            body.classList.toggle('sidebar-collapsed');
+            body.classList.toggle('sidebar-pinned');
         });
-    });
+    }
 
-    // Sales Chart using Chart.js
+    // --- Function to switch tabs ---
+    const switchTab = (tabName) => {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+
+        // Show the selected one
+        const activeTab = document.getElementById(tabName);
+        if (activeTab) {
+            activeTab.classList.remove('hidden');
+        }
+
+        // Update sidebar active link
+        document.querySelectorAll('aside nav a[data-tab]').forEach(link => link.classList.remove('active-link'));
+        const activeLink = document.querySelector(`aside nav a[data-tab="${tabName}"]`);
+        if (activeLink) activeLink.classList.add('active-link');
+
+        // Hide POS overlays when leaving POS tab
+        if (tabName !== 'posTab') {
+            document.querySelectorAll('#posTab .fixed').forEach(modal => modal.classList.add('hidden'));
+        }
+    };
+
+    // --- Sidebar tab switching ---
+    if (tabContents.length > 0) {
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tabName = link.dataset.tab;
+                switchTab(tabName);
+
+                // Collapse sidebar after switching (if not pinned)
+                if (!body.classList.contains('sidebar-pinned')) {
+                    body.classList.add('sidebar-collapsed');
+                }
+            });
+        });
+    }
+
+    // --- Sales Chart (Dashboard only) ---
     const salesCtx = document.getElementById('salesChart');
-
     if (salesCtx) {
         new Chart(salesCtx, {
             type: 'line',
@@ -71,71 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+                    y: { beginAtZero: true }
                 }
             }
         });
     }
 
-    function toggleSidebar() {
-    document.body.classList.toggle('sidebar-collapsed');
-}
-
- const switchTab = (tabName) => {
-        tabContents.forEach(content => {
-            content.classList.add('hidden');
-        });
-        document.getElementById(tabName).classList.remove('hidden');
-    };
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const tabName = link.dataset.tab;
-            
-            navLinks.forEach(navLink => navLink.classList.remove('active-link'));
-            link.classList.add('active-link');
-            
-            switchTab(tabName);
-        });
-    });
-    
-    // Set initial tab based on URL hash if any
-    const initialTab = window.location.hash.substring(1) || 'dashboardTab';
-    switchTab(initialTab);
-    const initialNavLink = document.querySelector(`[data-tab="${initialTab}"]`);
-    if (initialNavLink) {
-        initialNavLink.classList.add('active-link');
-    }
-
-   
-    // Fetch and display username
-    const fetchUserInfo = async () => {
-        try {
-            const response = await fetch('get_user_info.php');
-            const result = await response.json();
-            if (result.success) {
-                usernameDisplay.textContent = result.username;
-            } else {
-                console.error('Failed to fetch user info.');
-            }
-        } catch (error) {
-            console.error('Error fetching user info:', error);
-        }
-    };
-
-    // Handle logout link click
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = 'logout.php';
-        });
-    }
-
-    fetchUserInfo();
-
-
+    // --- Default: show POS tab on page load ---
+    switchTab('posTab');
 });
-

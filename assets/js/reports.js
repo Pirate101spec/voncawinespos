@@ -1,91 +1,55 @@
-document.addEventListener('DOMContentLoaded', async () => {
-    const reportsTab = document.getElementById('reportsTab');
-    const filterReportBtn = document.getElementById('filterReportBtn');
-    const exportReportBtn = document.getElementById('exportReportBtn');
+document.addEventListener('DOMContentLoaded', () => {
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
-    const topSellingProductsTableBody = document.getElementById('topSellingProductsTableBody');
+    const filterBtn = document.getElementById('filterReportBtn');
+    const exportBtn = document.getElementById('exportReportBtn');
+    const topSellingTable = document.getElementById('topSellingProductsTableBody');
+    let dailyChart = null;
 
-    if (!reportsTab) return;
-
-    let dailySalesChartInstance = null;
-    let dailyReportsData = [];
-
-    async function fetchReports(startDate = null, endDate = null) {
+    async function fetchReports(start=null,end=null){
         const params = new URLSearchParams();
-        if (startDate) params.append('start_date', startDate);
-        if (endDate) params.append('end_date', endDate);
-        
-        const response = await apiFetch('get_reports.php?' + params.toString());
-        
-        if (response && response.success) {
-            dailyReportsData = response.dailySales;
-            renderDailySalesChart();
-            renderTopSellingProducts(response.topSelling);
-        }
+        if(start) params.append('start_date', start);
+        if(end) params.append('end_date', end);
+
+        try{
+            const res = await fetch(`/wines/assets/api/get_reports.php?${params.toString()}`);
+
+            const data = await res.json();
+            if(!data.success) return console.error(data.message);
+
+            renderDailyChart(data.dailySales);
+            renderTopSelling(data.topSelling);
+        }catch(err){console.error(err);}
     }
 
-    function renderDailySalesChart() {
-        const labels = dailyReportsData.map(d => d.sale_date);
-        const data = dailyReportsData.map(d => parseFloat(d.total_sales));
+    function renderDailyChart(dailySales){
+        const labels = dailySales.map(d=>d.sale_date);
+        const values = dailySales.map(d=>parseFloat(d.total_sales));
 
-        if (dailySalesChartInstance) {
-            dailySalesChartInstance.destroy();
-        }
-        
+        if(dailyChart) dailyChart.destroy();
         const ctx = document.getElementById('dailySalesChart').getContext('2d');
-        dailySalesChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Daily Sales (Ksh)',
-                    data: data,
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
+        dailyChart = new Chart(ctx, {
+            type:'line',
+            data:{ labels, datasets:[{ label:'Daily Sales', data:values, borderColor:'rgb(75,192,192)', backgroundColor:'rgba(75,192,192,0.2)', fill:true, tension:0.1 }] },
+            options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
         });
     }
 
-    function renderTopSellingProducts(topSelling) {
-        topSellingProductsTableBody.innerHTML = '';
-        topSelling.forEach(item => {
+    function renderTopSelling(top){
+        topSellingTable.innerHTML = '';
+        if(top.length===0) topSellingTable.innerHTML = `<tr><td colspan="3" class="px-3 py-2 text-center">No data</td></tr>`;
+        else top.forEach(item=>{
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="px-3 py-2 text-sm">${item.name}</td>
                 <td class="px-3 py-2 text-sm">${item.quantity_sold}</td>
                 <td class="px-3 py-2 text-sm">Ksh ${item.total_revenue}</td>
             `;
-            topSellingProductsTableBody.appendChild(row);
+            topSellingTable.appendChild(row);
         });
     }
 
-    filterReportBtn.addEventListener('click', () => {
-        fetchReports(startDateInput.value, endDateInput.value);
-    });
+    filterBtn.addEventListener('click', ()=>fetchReports(startDateInput.value,endDateInput.value));
 
-    exportReportBtn.addEventListener('click', async () => {
-        const params = new URLSearchParams();
-        if (startDateInput.value) params.append('start_date', startDateInput.value);
-        if (endDateInput.value) params.append('end_date', endDateInput.value);
-        
-        const response = await fetch(`http://localhost/vonca_wines/export_report.php?${params.toString()}`);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `sales_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-    });
-
-    fetchReports();
+    fetchReports(); // initial load
 });

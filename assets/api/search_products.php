@@ -1,25 +1,40 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+require_once "db.php";
 
-require_once 'db.php';
-$response = ['success' => false, 'data' => []];
+header("Content-Type: application/json");
 
-$searchTerm = $_GET['q'] ?? '';
+$q = isset($_GET['query']) ? trim($_GET['query']) : "";
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 
-if (!empty($searchTerm)) {
-    try {
-        $stmt = $pdo->prepare("SELECT barcode, name, retail_price FROM products WHERE name LIKE ? OR barcode LIKE ? LIMIT 10");
-        $stmt->execute(["%$searchTerm%", "%$searchTerm%"]);
-        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $response['success'] = true;
-        $response['data'] = $products;
-    } catch (Exception $e) {
-        $response['message'] = 'Error searching products: ' . $e->getMessage();
-    }
+$limit = 15;
+$offset = ($page - 1) * $limit;
+
+if ($q === '') {
+    echo json_encode(["success" => false, "message" => "Empty search query"]);
+    exit;
 }
 
-echo json_encode($response);
+$like = '%' . $q . '%';
+
+try {
+    // ✅ Use integer interpolation for LIMIT and OFFSET (safe since casted)
+    $sql = "SELECT id, barcode, name, retail_price AS price, wholesale_price, stock 
+            FROM products 
+            WHERE name LIKE ? OR barcode LIKE ? 
+            LIMIT $limit OFFSET $offset";
+            
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$like, $like]);
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode([
+        "success" => true,
+        "data" => $results
+    ]);
+} catch (Exception $e) {
+    echo json_encode([
+        "success" => false,
+        "message" => $e->getMessage()
+    ]);
+}
 ?>

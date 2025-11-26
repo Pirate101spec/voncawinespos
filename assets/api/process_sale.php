@@ -1,30 +1,85 @@
 <?php
-require 'db.php';
+require_once "db.php";
 session_start();
-$cashier_id = $_SESSION['user_id'] ?? 1; // fallback to demo user
-$items = json_decode(file_get_contents('php://input'), true)['items'];
-$total = json_decode(file_get_contents('php://input'), true)['total'];
+
+header("Content-Type: application/json");
+
+// Decode JSON body
+$data = json_decode(file_get_contents("php://input"), true);
+
+if (!$data || empty($data['items'])) {
+    echo json_encode(['success' => false, 'message' => 'No items provided']);
+    exit;
+}
 
 try {
     $pdo->beginTransaction();
-    $stmt = $pdo->prepare("INSERT INTO sales (total, datetime, cashier_id) VALUES (?, NOW(), ?)");
-    $stmt->execute([$total, $cashier_id]);
+
+    // --- Sale core details ---
+    $customer_id    = $data['customer_id'] ?? null;
+    $user_id        = $_SESSION['user_id'] ?? 1; // replace with actual session user later
+    $payment_method = $data['payment_method'] ?? 'Cash';
+    $subtotal       = $data['subtotal'] ?? 0;
+    $tax            = $data['tax'] ?? 0;
+    $total          = $data['total'] ?? 0;
+
+    // --- Insert into sales table ---
+    $stmt = $pdo->prepare("
+        INSERT INTO sales (customer_id, user_id, payment_method, subtotal, tax, total, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, NOW())
+    ");
+    $stmt->execute([$customer_id, $user_id, $payment_method, $subtotal, $tax, $total]);
     $sale_id = $pdo->lastInsertId();
 
-    $itemStmt = $pdo->prepare("INSERT INTO sale_items (sale_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
-    foreach ($items as $item) {
-        $product_id = $item['product_id'];
-        $quantity = $item['quantity'];
-        $priceStmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");
-        $priceStmt->execute([$product_id]);
-        $price = $priceStmt->fetchColumn();
-        $itemStmt->execute([$sale_id, $product_id, $quantity, $price]);
+    // --- Insert sale items + deduct stock ---
+    $itemStmt = $pdo->prepare("
+        INSERT INTO sale_items (sale_id, product_id, qty, price, total)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+    $updateStock = $pdo->prepare("
+        UPDATE products SET stock = stock - ? WHERE id = ?
+    ");
+
+    foreach ($data['items'] as $item) {
+        $product_id = $item['id'];
+        $qty   = $item['qty'];
+        $price      = $item['price'];
+        $line_total = $qty * $price;
+
+        $itemStmt->execute([$sale_id, $product_id, $qty, $price, $line_total]);
+        $updateStock->execute([$qty, $product_id]);
     }
 
     $pdo->commit();
-    echo json_encode(['status' => 'success', 'sale_id' => $sale_id]);
+
+    // --- Fetch sale items back for receipt ---
+    $stmtItems = $pdo->prepare("
+        SELECT p.name, si.qty, si.price, si.total
+        FROM sale_items si
+        JOIN products p ON si.product_id = p.id
+        WHERE si.sale_id = ?
+    ");
+    $stmtItems->execute([$sale_id]);
+    $sale_items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
+
+    // --- Response to frontend ---
+    echo json_encode([
+        'success' => true,
+        'message' => 'Sale processed successfully',
+        'sale_id' => $sale_id,
+        'payment_method' => $payment_method,
+        'subtotal' => $subtotal,
+        'tax' => $tax,
+        'total' => $total,
+        'cashier' => $_SESSION['username'] ?? 'Cashier',
+        'items' => $sale_items
+    ]);
+
 } catch (Exception $e) {
     $pdo->rollBack();
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
 ?>

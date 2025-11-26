@@ -1,22 +1,25 @@
 <?php
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-
 require_once 'db.php';
-
-$response = ['success' => false, 'data' => []];
+header('Content-Type: application/json');
 
 try {
-    $stmt = $pdo->query("SELECT * FROM products ORDER BY name ASC");
+    $stmt = $pdo->query("SELECT 
+        id, 
+        barcode, 
+        name, 
+        retail_price, 
+        wholesale_price, 
+        stock
+    FROM products ORDER BY name ASC");
+
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $response['success'] = true;
-    $response['data'] = $products;
-} catch (Exception $e) {
-    $response['message'] = 'Error fetching products: ' . $e->getMessage();
-}
+    echo json_encode([
+        "success" => true,
+        "data" => $products   // ⚡ use "data" not "products" so it matches products.js
+    ]);
 
-echo json_encode($response);
-?>
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(["success" => false, "message" => $e->getMessage()]);
+}
